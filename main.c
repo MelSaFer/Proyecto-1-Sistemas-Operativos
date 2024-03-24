@@ -1,9 +1,8 @@
 #include <stdio.h>
 //#include <curses.h>
 
-
 //STRUCTS---------------------------------------------
-struct labyrinth{
+struct Labyrinth{
       char wall;
       int x;
       int y;
@@ -33,7 +32,7 @@ Output:
    void
 -----------------------------------------------------*/
 void createlabyrinth(){
-   struct labyrinth wall;
+   struct Labyrinth wall;
    wall.wall = '#';
    wall.x = 10;
    wall.y = 10;
@@ -47,28 +46,43 @@ Entries:
 Output:
    void
 -----------------------------------------------------*/
+void initlabyrinth(char *fileName) {
+    FILE *file;
+    file = fopen(fileName, "r");
+    struct Labyrinth labyrinth;
+    labyrinth.x = 0; 
+    labyrinth.y = 0;
 
-void initlabyrinth(char *fileName){
-   FILE *file;
-   file = fopen(fileName, "r");
-   if(file == NULL){
-      printf("Error opening file\n");
-      return;
-   }
-   char c;
-   while((c = fgetc(file)) != EOF){
-      printf("%c", c);
-   }
-   printf("\n");
-   fclose(file);
+    if (file == NULL) {
+        printf("Error opening file\n");
+        return;
+    }
+
+    char c;
+
+    while ((c = fgetc(file)) != EOF) {
+        printf("%c", c);
+        labyrinth.wall = c;
+
+        if (c == '\n') { 
+            labyrinth.y++;
+            labyrinth.x = 0;
+        } else {
+            labyrinth.x++; // Si no, incrementa x
+        }
+    }
+
+    printf("\n");
+    // printf("Wall: %c\n", labyrinth.wall);
+    // printf("X: %d\n", labyrinth.x);
+    // printf("Y: %d\n", labyrinth.y);
+    fclose(file);
 }
+
 
 
 //MAIN-----------------------------------------------
 int main() {
-   //printf("\033[2J");
-   //printf("\033[%d;%dH", 1000, 100);printf("Hello Mel!\n");
-   //setCursor(100, 50);printf("Hello Mel!\n");
    initlabyrinth("labyrinth.txt");
    return 0;
 }
