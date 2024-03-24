@@ -1,5 +1,7 @@
 #include <stdio.h>
 //#include <curses.h>
+#include <pthread.h> 
+
 
 //STRUCTS---------------------------------------------
 struct Labyrinth{
@@ -32,10 +34,10 @@ Output:
    void
 -----------------------------------------------------*/
 void createlabyrinth(){
-   struct Labyrinth wall;
-   wall.wall = '#';
-   wall.x = 10;
-   wall.y = 10;
+   struct Labyrinth Wall;
+   Wall.wall = '#';
+   Wall.x = 10;
+   Wall.y = 10;
 }
 
 /*----------------------------------------------------
@@ -73,9 +75,10 @@ void initlabyrinth(char *fileName) {
     }
 
     printf("\n");
-    // printf("Wall: %c\n", labyrinth.wall);
-    // printf("X: %d\n", labyrinth.x);
-    // printf("Y: %d\n", labyrinth.y);
+    printf("Wall: %c\n", labyrinth.wall);
+    printf("X: %d\n", labyrinth.x);
+    printf("Y: %d\n", labyrinth.y);
+	printf("\n");
     fclose(file);
 }
 
