@@ -8,14 +8,23 @@
 int rowsQty, colsQty;
 char labyrinth[MAX_ROWS][MAX_COLS];
 
-// STRUCTS---------------------------------------------
-struct Labyrinth
+// ENUMS-----------------------------------------------
+enum Direction
 {
-   char wall;
-   int x;
-   int y;
-   // int **m;
+   UP,
+   DOWN,
+   LEFT,
+   RIGHT
 };
+
+// STRUCTS---------------------------------------------
+struct thread_data
+{
+   int x,y;
+   enum Direction direction;
+   int steps;
+};
+
 
 // FUNCTIONS-------------------------------------------
 
@@ -41,20 +50,7 @@ void setCursor(int x, int y)
    fflush(stdout);
 }
 
-/*----------------------------------------------------
-Creates a labyrinth
-Entries:
-   None
-Output:
-   void
------------------------------------------------------*/
-void createlabyrinth()
-{
-   struct Labyrinth Wall;
-   Wall.wall = '#';
-   Wall.x = 10;
-   Wall.y = 10;
-}
+
 
 /*----------------------------------------------------
 Prints a separator line on the console
@@ -93,9 +89,11 @@ void printLabyrinth()
       {
          printf(" %c |", labyrinth[i][j]);
       }
-      printf("\n|");
-      for (int j = 0; j < colsQty; j++)
-      {
+
+      if( i < rowsQty){
+         printf("\n|");
+      } else{
+         printf("\n");
       }
    }
 
@@ -144,6 +142,14 @@ void readLabyrinth(char *fileName)
 
    fclose(file);
 }
+
+/*----------------------------------------------------
+Creates a new thread
+Entries:
+   None
+Output:  
+   void
+-----------------------------------------------------*/
 
 // MAIN-----------------------------------------------
 int main()
