@@ -148,7 +148,7 @@ void readLabyrinth(char *fileName)
 // MAIN-----------------------------------------------
 int main()
 {
-   readLabyrinth("/inputs/lab1.txt");
+   readLabyrinth("inputs/lab1.txt");
    printLabyrinth();
    return 0;
 }
