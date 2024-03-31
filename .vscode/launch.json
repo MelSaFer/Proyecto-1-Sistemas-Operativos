@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/mois/Desktop/repos/Proyecto-1-Sistemas-Operativos",
+      "program": "/Users/mois/Desktop/repos/Proyecto-1-Sistemas-Operativos/build/Debug/outDebug"
+    }
+  ]
+}
