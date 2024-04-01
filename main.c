@@ -2,6 +2,7 @@
 // #include <curses.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 // VARIABLES---------------------------------------------
 #define MAX_ROWS 100
@@ -55,7 +56,7 @@ void setCursor(int x, int y)
    printf("%c", '?');
    fflush(stdout);
 
-   printf("\033[%d;%dH", y + 1, 1);
+   printf("\033[%d;%dH", rowsQty + 3, 1);
    fflush(stdout);
 }
 
@@ -87,6 +88,7 @@ Output:
 -----------------------------------------------------*/
 void printLabyrinth()
 {
+   system("clear");
    printSeparator();
 
    // prints each row of the labyrinth
@@ -152,6 +154,7 @@ void readLabyrinth(char *fileName)
 
    fclose(file);
 }
+
 /*----------------------------------------------------
 Moves the thread in the labyrinth
 Entries:
@@ -161,8 +164,39 @@ Output:
 -----------------------------------------------------*/
 void* moveThread(void* arg)
 {
-   printf("Thread en movimiento\n");
-   return NULL;
+    struct thread_data* data = (struct thread_data*)arg;
+    int x = data->x;
+    int y = data->y;
+    enum Direction direction = data->direction;
+    int steps = data->steps;
+	printf("2- Thread en (%d, %d)\n", x, y);
+    free(data); 
+
+    while ((labyrinth[y][x].labyrinth != '*') && (labyrinth[y][x].labyrinth != '|')) {
+        switch (direction) {
+            case UP:
+                y--;
+                break;
+            case DOWN:
+                y++;
+                break;
+            case LEFT:
+                x--;
+                break;
+            case RIGHT:
+                x++;
+                break;
+        }
+		printf("3- Thread en (%d, %d)\n", x, y);
+        setCursor(x, y);
+		labyrinth[y][x].labyrinth = '?';
+		printLabyrinth();
+
+        steps++;
+        usleep(100000); 
+    }
+
+    return NULL;
 }
 
 
@@ -175,26 +209,26 @@ Output:
 -----------------------------------------------------*/
 void createThread(int x, int y, enum Direction direction, int steps)
 {
-   struct thread_data* data = (struct thread_data*)malloc(sizeof(struct thread_data));
-   if (data == NULL) {
-      printf("Error\n");
-      return; 
-   }
+	struct thread_data* data = (struct thread_data*)malloc(sizeof(struct thread_data));
+	if (data == NULL) {
+		printf("Error\n");
+		return; 
+	}
 
-   data->x = x;
-   data->y = y;
-   data->direction = direction;
-   data->steps = steps;
+	data->x = x;
+	data->y = y;
+	data->direction = direction;
+	data->steps = steps;
 
-   pthread_t thread;
-   if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0) {
-      printf("Error al crear el thread\n");
-      free(data); 
-      return;
-   }
-    
-   printf("Thread creado\n");
-   pthread_detach(thread); 
+   	pthread_t thread;
+   	if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0) {
+    	printf("Error al crear el thread\n");
+    	free(data); 
+    	return;
+   	}
+	printf("1- Thread en (%d, %d)\n", x, y);
+   	printf("Thread creado\n");
+   	pthread_detach(thread); 
 }
 
 
@@ -205,6 +239,8 @@ int main()
 {
    readLabyrinth("inputs/lab1.txt");
    printLabyrinth();
-   createThread(1, 1, RIGHT, 0);
+   createThread(3, 2, RIGHT, 0);
+   //setCursor(3, 2);
+   //printf("Hilo creado\n");
    return 0;
 }
