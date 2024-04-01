@@ -7,7 +7,7 @@
 #define MAX_COLS 100
 #define MAX_DIRECTIONS 4
 int rowsQty, colsQty;
-char labyrinth[MAX_ROWS][MAX_COLS];
+
 
 // ENUMS-----------------------------------------------
 enum Direction
@@ -26,12 +26,13 @@ struct thread_data
    int steps;
 };
 
-struct labyrinth_data
-{
-   char labyrinth;
-   enum Direction direction[MAX_DIRECTIONS];
-};
+typedef struct {
+    char labyrinth;
+    enum Direction direction[MAX_DIRECTIONS];
+    int directionsQty;
+} labyrinth_data;
 
+labyrinth_data labyrinth[MAX_ROWS][MAX_COLS];
 
 // FUNCTIONS-------------------------------------------
 
@@ -94,7 +95,7 @@ void printLabyrinth()
       //   printf("|");
       for (int j = 0; j < colsQty; j++)
       {
-         printf(" %c |", labyrinth[i][j]);
+         printf(" %c |", labyrinth[i][j].labyrinth);
       }
 
       if( i < rowsQty){
@@ -142,7 +143,8 @@ void readLabyrinth(char *fileName)
       }
       else
       {
-         labyrinth[row][column] = c;
+         labyrinth[row][column].labyrinth = c;
+         labyrinth[row][column].directionsQty = 0;
          column++;
       }
    }
