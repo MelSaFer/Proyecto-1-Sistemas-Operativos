@@ -5,6 +5,7 @@
 // VARIABLES---------------------------------------------
 #define MAX_ROWS 100
 #define MAX_COLS 100
+#define MAX_DIRECTIONS 4
 int rowsQty, colsQty;
 char labyrinth[MAX_ROWS][MAX_COLS];
 
@@ -23,6 +24,12 @@ struct thread_data
    int x,y;
    enum Direction direction;
    int steps;
+};
+
+struct labyrinth_data
+{
+   char labyrinth;
+   enum Direction direction[MAX_DIRECTIONS];
 };
 
 
@@ -150,6 +157,26 @@ Entries:
 Output:  
    void
 -----------------------------------------------------*/
+void createThread()
+{
+   // pthread_t thread;
+   // struct thread_data data;
+   // pthread_create(&thread, NULL, moveThread, (void *)&data);
+}
+
+
+/*----------------------------------------------------
+Moves the thread in the labyrinth
+Entries:
+   None 
+Output:
+   void
+-----------------------------------------------------*/
+void moveThread(struct thread_data *data)
+{
+   
+
+}
 
 // MAIN-----------------------------------------------
 int main()
