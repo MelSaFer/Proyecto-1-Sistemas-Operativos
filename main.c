@@ -1,6 +1,7 @@
 #include <stdio.h>
 // #include <curses.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 // VARIABLES---------------------------------------------
 #define MAX_ROWS 100
@@ -149,6 +150,19 @@ void readLabyrinth(char *fileName)
 
    fclose(file);
 }
+/*----------------------------------------------------
+Moves the thread in the labyrinth
+Entries:
+   None 
+Output:
+   void
+-----------------------------------------------------*/
+void* moveThread(void* arg)
+{
+   printf("Thread en movimiento\n");
+   return NULL;
+}
+
 
 /*----------------------------------------------------
 Creates a new thread
@@ -157,31 +171,38 @@ Entries:
 Output:  
    void
 -----------------------------------------------------*/
-void createThread()
+void createThread(int x, int y, enum Direction direction, int steps)
 {
-   // pthread_t thread;
-   // struct thread_data data;
-   // pthread_create(&thread, NULL, moveThread, (void *)&data);
+   struct thread_data* data = (struct thread_data*)malloc(sizeof(struct thread_data));
+   if (data == NULL) {
+      printf("Error\n");
+      return; 
+   }
+
+   data->x = x;
+   data->y = y;
+   data->direction = direction;
+   data->steps = steps;
+
+   pthread_t thread;
+   if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0) {
+      printf("Error al crear el thread\n");
+      free(data); 
+      return;
+   }
+    
+   printf("Thread creado\n");
+   pthread_detach(thread); 
 }
 
 
-/*----------------------------------------------------
-Moves the thread in the labyrinth
-Entries:
-   None 
-Output:
-   void
------------------------------------------------------*/
-void moveThread(struct thread_data *data)
-{
-   
 
-}
 
 // MAIN-----------------------------------------------
 int main()
 {
    readLabyrinth("inputs/lab1.txt");
    printLabyrinth();
+   createThread(1, 1, RIGHT, 0);
    return 0;
 }
