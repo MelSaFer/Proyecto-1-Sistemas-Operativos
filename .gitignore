@@ -12,3 +12,4 @@
 # Executables
 *.exe
 main
+/.vscode
