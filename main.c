@@ -10,25 +10,25 @@
 #define MAX_DIRECTIONS 4
 int rowsQty, colsQty;
 
-
 // ENUMS-----------------------------------------------
 enum Direction
 {
-   UP,
-   DOWN,
-   LEFT,
-   RIGHT
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
 };
 
 // STRUCTS---------------------------------------------
 struct thread_data
 {
-   int x,y;
-   enum Direction direction;
-   int steps;
+    int x, y;
+    enum Direction direction;
+    int steps;
 };
 
-typedef struct {
+typedef struct
+{
     char labyrinth;
     enum Direction direction[MAX_DIRECTIONS];
     int directionsQty;
@@ -48,19 +48,17 @@ Output:
 -----------------------------------------------------*/
 void setCursor(int x, int y)
 {
-   // printf("\033[%d;%df", x, y);
+    // printf("\033[%d;%df", x, y);
 
-   printf("\033[%d;%dH", y, x);
-   fflush(stdout);
+    printf("\033[%d;%dH", y, x);
+    fflush(stdout);
 
-   printf("%c", '?');
-   fflush(stdout);
+    printf("%c", '?');
+    fflush(stdout);
 
-   printf("\033[%d;%dH", rowsQty + 3, 1);
-   fflush(stdout);
+    printf("\033[%d;%dH", rowsQty + 3, 1);
+    fflush(stdout);
 }
-
-
 
 /*----------------------------------------------------
 Prints a separator line on the console
@@ -71,12 +69,12 @@ Output:
 -----------------------------------------------------*/
 void printSeparator()
 {
-   printf("-");
-   for (int j = 0; j < colsQty * 2; j++)
-   {
-      printf("--");
-   }
-   printf("-\n");
+    printf("-");
+    for (int j = 0; j < colsQty * 2; j++)
+    {
+        printf("--");
+    }
+    printf("-\n");
 }
 
 /*----------------------------------------------------
@@ -88,27 +86,58 @@ Output:
 -----------------------------------------------------*/
 void printLabyrinth()
 {
-   system("clear");
-   printSeparator();
+    system("clear");
+    printSeparator();
 
-   // prints each row of the labyrinth
-   printf("|");
-   for (int i = 1; i < rowsQty + 1; i++)
-   {
-      //   printf("|");
-      for (int j = 0; j < colsQty; j++)
-      {
-         printf(" %c |", labyrinth[i][j].labyrinth);
-      }
+    // prints each row of the labyrinth
+    printf("|");
+    for (int i = 0; i < rowsQty; i++)
+    {
+        //   printf("|");
+        for (int j = 0; j < colsQty; j++)
+        {
+            printf(" %c |", labyrinth[i][j].labyrinth);
+        }
 
-      if( i < rowsQty){
-         printf("\n|");
-      } else{
-         printf("\n");
-      }
-   }
+        if (i < rowsQty)
+        {
+            printf("\n|");
+        }
+        else
+        {
+            printf("\n");
+        }
+    }
 
-   printSeparator();
+    printSeparator();
+}
+
+void printLabyrinthRaw()
+{
+    // Mensaje de depuración antes del corchete
+    // printf("DEBUG: Antes del corchete abierto\n");
+
+    printf("[");
+    fflush(stdout); // Forzar la impresión del corchete
+
+    // Mensaje de depuración después del corchete
+    printf("\n");
+    fflush(stdout);
+
+    for (int i = 0; i < rowsQty; i++)
+    {
+        if (i > 0)
+            printf(",\n");
+        printf("(");
+        for (int j = 0; j < colsQty; j++)
+        {
+            printf("'%c'", labyrinth[i][j].labyrinth);
+            if (j < colsQty - 1)
+                printf(", ");
+        }
+        printf(")");
+    }
+    printf("]\n");
 }
 
 /*----------------------------------------------------
@@ -121,79 +150,101 @@ Output:
 -----------------------------------------------------*/
 void readLabyrinth(char *fileName)
 {
-   FILE *file;
-   file = fopen(fileName, "r");
+    FILE *file;
+    file = fopen(fileName, "r");
 
-   if (file == NULL)
-   {
-      printf("Error opening file\n");
-      return;
-   }
+    if (file == NULL)
+    {
+        printf("Error opening file\n");
+        return;
+    }
 
-   // obtains the number of rows and columns
-   fscanf(file, "%d %d", &rowsQty, &colsQty);
+    // obtains the number of rows and columns
+    fscanf(file, "%d %d", &rowsQty, &colsQty);
+    fgetc(file);
+    fgetc(file);
 
-   // reads the file content and stores it in the labyrinth matrix of chars
-   int row = 0;
-   int column = 0;
-   int c;
-   while ((c = fgetc(file)) != EOF)
-   {
-      if (c == '\n')
-      {
-         row++;
-         column = 0;
-      }
-      else
-      {
-         labyrinth[row][column].labyrinth = c;
-         labyrinth[row][column].directionsQty = 0;
-         column++;
-      }
-   }
+    // reads the file content and stores it in the labyrinth matrix of chars
+    int row = 0;
+    int column = 0;
+    int c;
+    while ((c = fgetc(file)) != EOF)
+    {
+        if (c == '\n')
+        {
+            row++;
+            column = 0;
+        }
+        else
+        {
+            labyrinth[row][column].labyrinth = c;
+            labyrinth[row][column].directionsQty = 0;
+            column++;
+        }
+    }
 
-   fclose(file);
+    fclose(file);
 }
 
 /*----------------------------------------------------
 Moves the thread in the labyrinth
 Entries:
-   None 
+   arg: thread data
 Output:
    void
 -----------------------------------------------------*/
-void* moveThread(void* arg)
-{
-    struct thread_data* data = (struct thread_data*)arg;
+void *moveThread(void *arg) {
+    struct thread_data *data = (struct thread_data *)arg;
     int x = data->x;
     int y = data->y;
     enum Direction direction = data->direction;
     int steps = data->steps;
-	printf("2- Thread en (%d, %d)\n", x, y);
-    free(data); 
+    free(data);
 
-    while ((labyrinth[y][x].labyrinth != '*') && (labyrinth[y][x].labyrinth != '|')) {
+    // Sets the the thread in the initial position
+    if ((x >= 0 && x < colsQty) && (y >= 0 && y < rowsQty) &&
+        (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/')) {
+        labyrinth[y][x].labyrinth = '?';  
+    }
+    printLabyrinth();
+
+    while (1) { 
+        int nextX = x, nextY = y;
         switch (direction) {
-            case UP:
-                y--;
-                break;
-            case DOWN:
-                y++;
-                break;
-            case LEFT:
-                x--;
-                break;
-            case RIGHT:
-                x++;
-                break;
+            case UP:    
+				nextY--; 
+				break;
+            case DOWN:  
+				nextY++; 
+				break;
+            case LEFT:  
+				nextX--; 
+				break;
+            case RIGHT: 
+				nextX++; 
+				break;
         }
-		printf("3- Thread en (%d, %d)\n", x, y);
-        setCursor(x, y);
-		labyrinth[y][x].labyrinth = '?';
-		printLabyrinth();
+
+        // Verifies if the next step is out of bounds
+        if (nextX < 0 || nextX >= colsQty || nextY < 0 || nextY >= rowsQty) {
+            break; 
+        }
+
+        // Verifies if the next step is an obstacle or the exit
+        if (labyrinth[nextY][nextX].labyrinth == '*' || labyrinth[nextY][nextX].labyrinth == '/') {
+            break; 
+        }
+
+        x = nextX;
+        y = nextY;
+
+        labyrinth[y][x].labyrinth = '?';
+        labyrinth[y][x].directionsQty++;
+        labyrinth[y][x].direction[labyrinth[y][x].directionsQty - 1] = direction;
+        printLabyrinth();
 
         steps++;
-        usleep(100000); 
+        usleep(500000);
     }
 
     return NULL;
@@ -204,43 +255,48 @@ void* moveThread(void* arg)
 Creates a new thread
 Entries:
    None
-Output:  
+Output:
    void
 -----------------------------------------------------*/
 void createThread(int x, int y, enum Direction direction, int steps)
 {
-	struct thread_data* data = (struct thread_data*)malloc(sizeof(struct thread_data));
-	if (data == NULL) {
-		printf("Error\n");
-		return; 
-	}
+    struct thread_data *data = (struct thread_data *)malloc(sizeof(struct thread_data));
+    if (data == NULL)
+    {
+        printf("Error\n");
+        return;
+    }
 
-	data->x = x;
-	data->y = y;
-	data->direction = direction;
-	data->steps = steps;
+    data->x = x;
+    data->y = y;
+    data->direction = direction;
+    data->steps = steps;
 
-   	pthread_t thread;
-   	if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0) {
-    	printf("Error al crear el thread\n");
-    	free(data); 
-    	return;
-   	}
-	printf("1- Thread en (%d, %d)\n", x, y);
-   	printf("Thread creado\n");
-   	pthread_detach(thread); 
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0)
+    {
+        printf("Error al crear el thread\n");
+        free(data);
+        return;
+    }
+    usleep(100000);
+    pthread_join(thread, NULL);
+
+    // printf("1- Thread en (%d, %d)\n", x, y);
+    printf("Thread creado\n");
+    // pthread_detach(thread);
 }
-
-
-
 
 // MAIN-----------------------------------------------
 int main()
 {
-   readLabyrinth("inputs/lab1.txt");
-   printLabyrinth();
-   createThread(3, 2, RIGHT, 0);
-   //setCursor(3, 2);
-   //printf("Hilo creado\n");
-   return 0;
+    readLabyrinth("inputs/lab2.txt");
+    printLabyrinth();
+    //  printLabyrinthRaw();
+    createThread(0, 0, DOWN, 0);
+    createThread(0, 2, DOWN, 0);
+    // usleep(5);
+    //    setCursor(3, 2);
+    // printf("Hilo creado\n");
+    return 0;
 }
