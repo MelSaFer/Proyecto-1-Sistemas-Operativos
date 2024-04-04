@@ -13,6 +13,7 @@
 
 int rowsQty, colsQty;
 int foundExit = 0;
+int threadsQty = 0;
 
 
 // ENUMS-----------------------------------------------
@@ -214,12 +215,15 @@ void *moveThread(void *arg)
         (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/')) {
         labyrinth[y][x].labyrinth = CHAR_THREAD;  
         printLabyrinth();
+        // setCursor(x+3, y+2);
         sleep(1);
     }
     
 
     while (!foundExit) { 
         int nextX = x, nextY = y;
+        verifyPath(x, y, direction);
+
         switch (direction) {
             case UP:    
 				nextY--; 
@@ -258,7 +262,8 @@ void *moveThread(void *arg)
         labyrinth[y][x].directionsQty++;
         labyrinth[y][x].direction[labyrinth[y][x].directionsQty - 1] = direction;
         printLabyrinth();
-        verifyPath(x, y, direction);
+        // setCursor(x+3, y+2);
+        // verifyPath(x, y, direction);
 
         steps++;
         usleep(500000);
@@ -277,11 +282,10 @@ Entries:
 Output:
    void
 -----------------------------------------------------*/
-void createThread(int x, int y, enum Direction direction, int steps)
-{
-    struct thread_data *data = (struct thread_data *)malloc(sizeof(struct thread_data));
-    if (data == NULL)
-    {
+void createThread(int x, int y, enum Direction direction, int steps) {
+    threadsQty++;
+    struct thread_data *data = malloc(sizeof(struct thread_data));
+    if (data == NULL) {
         printf("Error\n");
         return;
     }
@@ -292,17 +296,17 @@ void createThread(int x, int y, enum Direction direction, int steps)
     data->steps = steps;
 
     pthread_t thread;
-    if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0)
-    {
+    if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0) {
         printf("Error al crear el thread\n");
         free(data);
         return;
     }
-    usleep(100000);
-    //pthread_join(thread, NULL);
+
+    // Opcionalmente, puedes hacer join o detach del hilo aquí
+    // pthread_join(thread, NULL);
+    pthread_detach(thread);
 
     printf("Thread creado\n");
-    // pthread_detach(thread);
 }
 
 
@@ -313,11 +317,12 @@ int main()
     readLabyrinth("inputs/lab1.txt");
     printLabyrinth();
     createThread(0, 0, DOWN, 0);
-    createThread(0, 0, RIGHT, 0);
+    // createThread(0, 0, RIGHT, 0);
     while(!foundExit){
-        sleep(1);
+        // sleep(1);
     }
     
     printf("Salida encontrada. Terminando programa.\n");
+    printf("Threads creados: %d\n", threadsQty);
     return 0; // Sale del programa.
 }
