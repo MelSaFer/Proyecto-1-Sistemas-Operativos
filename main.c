@@ -8,7 +8,6 @@
 #define MAX_ROWS 100
 #define MAX_COLS 100
 #define MAX_DIRECTIONS 4
-#define MAX_THREADS 100
 #define CHAR_THREAD '?'
 
 int rowsQty, colsQty;
@@ -27,7 +26,8 @@ enum Direction
 // STRUCTS---------------------------------------------
 struct thread_data
 {
-    int x, y;
+    int x;
+    int y;
     enum Direction direction;
     int steps;
 };
@@ -42,6 +42,17 @@ typedef struct
 labyrinth_data labyrinth[MAX_ROWS][MAX_COLS];
 
 // FUNCTIONS-------------------------------------------
+
+/*----------------------------------------------------
+Creates a new thread
+Entries:
+   x: x position
+   y: y position
+   direction: direction of the thread
+   steps: number of steps
+Output:
+   void
+-----------------------------------------------------*/
 void createThread(int x, int y, enum Direction direction, int steps);
 
 /*----------------------------------------------------
@@ -54,8 +65,6 @@ Output:
 -----------------------------------------------------*/
 void setCursor(int x, int y)
 {
-    // printf("\033[%d;%df", x, y);
-
     printf("\033[%d;%dH", y, x);
     fflush(stdout);
 
@@ -170,6 +179,7 @@ Verifies if the thread can move in a specific direction
 Entries:
     x: x position
     y: y position
+    direction: direction of the thread
 Output:
     void
 -----------------------------------------------------*/
@@ -179,10 +189,18 @@ void verifyPath(int x, int y, enum Direction direction)
     for (int dir = 0; dir < MAX_DIRECTIONS; dir++) {
         int newX = x, newY = y;
         switch (dir) {
-            case UP:    newY--; break;
-            case DOWN:  newY++; break;
-            case LEFT:  newX--; break;
-            case RIGHT: newX++; break;
+            case UP:    
+                newY--; 
+                break;
+            case DOWN:  
+                newY++; 
+                break;
+            case LEFT:  
+                newX--; 
+                break;
+            case RIGHT: 
+                newX++; 
+                break;
         }
         // Verifica si la posición está dentro de los límites y no es un obstáculo ni una posición visitada
         if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
@@ -268,12 +286,13 @@ void *moveThread(void *arg)
     return NULL;
 }
 
-
-
 /*----------------------------------------------------
 Creates a new thread
 Entries:
-   None
+   x: x position
+   y: y position
+   direction: direction of the thread
+   steps: number of steps
 Output:
    void
 -----------------------------------------------------*/
@@ -299,10 +318,7 @@ void createThread(int x, int y, enum Direction direction, int steps)
         return;
     }
     usleep(100000);
-    //pthread_join(thread, NULL);
-
     printf("Thread creado\n");
-    // pthread_detach(thread);
 }
 
 
@@ -310,10 +326,10 @@ void createThread(int x, int y, enum Direction direction, int steps)
 // MAIN-----------------------------------------------
 int main()
 {
-    readLabyrinth("inputs/lab1.txt");
+    printf("Iniciando programa\n");
+    readLabyrinth("inputs/lab2.txt");
     printLabyrinth();
     createThread(0, 0, DOWN, 0);
-    createThread(0, 0, RIGHT, 0);
     while(!foundExit){
         sleep(1);
     }
