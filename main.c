@@ -8,11 +8,12 @@
 #define MAX_ROWS 100
 #define MAX_COLS 100
 #define MAX_DIRECTIONS 4
-int rowsQty, colsQty;
 #define MAX_THREADS 100
 #define CHAR_THREAD '?'
-pthread_t threads[MAX_THREADS]; // Array of threads
-int thread_count = 0;
+
+int rowsQty, colsQty;
+int foundExit = 0;
+
 
 // ENUMS-----------------------------------------------
 enum Direction
@@ -41,6 +42,7 @@ typedef struct
 labyrinth_data labyrinth[MAX_ROWS][MAX_COLS];
 
 // FUNCTIONS-------------------------------------------
+void createThread(int x, int y, enum Direction direction, int steps);
 
 /*----------------------------------------------------
 Set cursor position
@@ -92,12 +94,12 @@ void printLabyrinth()
 {
     system("clear");
     printSeparator();
+    //sleep(2);
 
     // prints each row of the labyrinth
     printf("|");
     for (int i = 0; i < rowsQty; i++)
     {
-        //   printf("|");
         for (int j = 0; j < colsQty; j++)
         {
             printf(" %c |", labyrinth[i][j].labyrinth);
@@ -162,6 +164,34 @@ void readLabyrinth(char *fileName)
     fclose(file);
 }
 
+
+/*----------------------------------------------------
+Verifies if the thread can move in a specific direction
+Entries:
+    x: x position
+    y: y position
+Output:
+    void
+-----------------------------------------------------*/
+void verifyPath(int x, int y, enum Direction direction)
+{
+    // Verifica si hay posibles caminos alrededor de la celda actual
+    for (int dir = 0; dir < MAX_DIRECTIONS; dir++) {
+        int newX = x, newY = y;
+        switch (dir) {
+            case UP:    newY--; break;
+            case DOWN:  newY++; break;
+            case LEFT:  newX--; break;
+            case RIGHT: newX++; break;
+        }
+        // Verifica si la posición está dentro de los límites y no es un obstáculo ni una posición visitada
+        if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
+            labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0) {
+            createThread(newX, newY, (enum Direction)dir, 0);
+        }
+    }
+}
+
 /*----------------------------------------------------
 Moves the thread in the labyrinth
 Entries:
@@ -169,7 +199,9 @@ Entries:
 Output:
    void
 -----------------------------------------------------*/
-void *moveThread(void *arg) {
+void *moveThread(void *arg) 
+{
+    // Extracts the thread data
     struct thread_data *data = (struct thread_data *)arg;
     int x = data->x;
     int y = data->y;
@@ -181,10 +213,12 @@ void *moveThread(void *arg) {
     if ((x >= 0 && x < colsQty) && (y >= 0 && y < rowsQty) &&
         (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/')) {
         labyrinth[y][x].labyrinth = CHAR_THREAD;  
+        printLabyrinth();
+        sleep(1);
     }
-    printLabyrinth();
+    
 
-    while (1) { 
+    while (!foundExit) { 
         int nextX = x, nextY = y;
         switch (direction) {
             case UP:    
@@ -207,8 +241,14 @@ void *moveThread(void *arg) {
         }
 
         // Verifies if the next step is an obstacle or the exit
-        if (labyrinth[nextY][nextX].labyrinth == '*' || labyrinth[nextY][nextX].labyrinth == '/') {
+        if (labyrinth[nextY][nextX].labyrinth == '*') {
             break; 
+        }
+
+        //Verifies if the next step is the exit
+        if (labyrinth[nextY][nextX].labyrinth == '/') {
+            foundExit = 1;
+            break; // Termina el loop y sale de la función, lo que termina el thread.
         }
 
         x = nextX;
@@ -218,13 +258,16 @@ void *moveThread(void *arg) {
         labyrinth[y][x].directionsQty++;
         labyrinth[y][x].direction[labyrinth[y][x].directionsQty - 1] = direction;
         printLabyrinth();
+        verifyPath(x, y, direction);
 
         steps++;
         usleep(500000);
+        sleep(3);
     }
 
     return NULL;
 }
+
 
 
 /*----------------------------------------------------
@@ -256,18 +299,25 @@ void createThread(int x, int y, enum Direction direction, int steps)
         return;
     }
     usleep(100000);
-    pthread_join(thread, NULL);
+    //pthread_join(thread, NULL);
 
     printf("Thread creado\n");
     // pthread_detach(thread);
 }
 
+
+
 // MAIN-----------------------------------------------
 int main()
 {
-    readLabyrinth("inputs/lab3.txt");
+    readLabyrinth("inputs/lab1.txt");
     printLabyrinth();
     createThread(0, 0, DOWN, 0);
     createThread(0, 0, RIGHT, 0);
-    return 0;
+    while(!foundExit){
+        sleep(1);
+    }
+    
+    printf("Salida encontrada. Terminando programa.\n");
+    return 0; // Sale del programa.
 }
