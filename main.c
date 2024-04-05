@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 // VARIABLES---------------------------------------------
 #define MAX_ROWS 100
@@ -205,21 +206,37 @@ Output:
 -----------------------------------------------------*/
 void verifyPath(int x, int y, enum Direction direction)
 {
+    bool flag = true;
     for (int dir = 0; dir < MAX_DIRECTIONS; dir++)
     {
+        flag = true;
         int newX = x, newY = y;
+        if (dir == 0 && direction == UP){
+        printf("Case 1");
+        flag = !flag;
+            continue;}
+        if (dir == 1 && direction == DOWN){
+        flag = !flag;
+            continue;}
+        if (dir == 2 && direction == LEFT){
+        flag = !flag;
+            continue;}
+        if (dir == 3 && direction == RIGHT){
+        flag = !flag;
+            continue;}
+
         switch (dir)
         {
-        case UP:
+        case 0: // up
             newY--;
             break;
-        case DOWN:
+        case 1: // down
             newY++;
             break;
-        case LEFT:
+        case 2: // left
             newX--;
             break;
-        case RIGHT:
+        case 3: // right
             newX++;
             break;
         }
@@ -231,9 +248,10 @@ void verifyPath(int x, int y, enum Direction direction)
         // }
         
         if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
-            labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0)
+            labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0 && flag)
         {
             createThread(newX, newY, (enum Direction)dir, 0);
+            // printf("Thread creado en %d, %d\n", newX, newY);
         }
     }
 }
@@ -322,7 +340,7 @@ void *moveThread(void *arg)
 
         steps++;
         usleep(500000);
-        sleep(3);
+        sleep(1);
     }
 
     return NULL;
