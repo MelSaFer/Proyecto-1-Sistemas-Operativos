@@ -64,8 +64,15 @@ Entries:
 Output:
    void
 -----------------------------------------------------*/
-void setCursor(int x, int y)
+void setCursor(int x, int y, enum Direction direction)
 {
+    if(direction == UP || direction == DOWN){
+        x = x + 3;
+        y = y + 1;
+    } else if(direction == LEFT || direction == RIGHT){
+        x = x + 3;
+        y = y + 1;
+    }
     printf("\033[%d;%dH", y, x);
     fflush(stdout);
 
@@ -74,6 +81,20 @@ void setCursor(int x, int y)
 
     printf("\033[%d;%dH", rowsQty + 3, 1);
     fflush(stdout);
+}
+
+void printLabyrinthRaw() {
+    printf("[");
+    for (int i = 0; i < rowsQty; i++) {
+        if (i > 0) printf(",\n"); // Añade una nueva línea entre filas, excepto antes de la primera
+        printf("(");
+        for (int j = 0; j < colsQty; j++) {
+            printf("(%d, %d, %c)", i, j, labyrinth[i][j].labyrinth);
+            if (j < colsQty - 1) printf(", "); // No añade coma después del último elemento
+        }
+        printf(")");
+    }
+    printf("]\n");
 }
 
 /*----------------------------------------------------
@@ -232,8 +253,8 @@ void *moveThread(void *arg)
     if ((x >= 0 && x < colsQty) && (y >= 0 && y < rowsQty) &&
         (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/')) {
         labyrinth[y][x].labyrinth = CHAR_THREAD;  
-        printLabyrinth();
-        // setCursor(x+3, y+2);
+        //printLabyrinth();
+        setCursor(x, y, direction);
         sleep(1);
     }
     
@@ -279,8 +300,8 @@ void *moveThread(void *arg)
         labyrinth[y][x].labyrinth = CHAR_THREAD;
         labyrinth[y][x].directionsQty++;
         labyrinth[y][x].direction[labyrinth[y][x].directionsQty - 1] = direction;
-        printLabyrinth();
-        // setCursor(x+3, y+2);
+        //printLabyrinth();
+        setCursor(x, y, direction);
         // verifyPath(x, y, direction);
 
         steps++;
@@ -325,7 +346,7 @@ void createThread(int x, int y, enum Direction direction, int steps) {
     // pthread_join(thread, NULL);
     pthread_detach(thread);
 
-    printf("Thread creado\n");
+    //printf("Thread creado\n");
 }
 
 
@@ -335,6 +356,7 @@ int main()
 {
     printf("Iniciando programa\n");
     readLabyrinth("inputs/lab2.txt");
+    //printLabyrinthRaw();
     printLabyrinth();
     createThread(0, 0, DOWN, 0);
     // createThread(0, 0, RIGHT, 0);
