@@ -311,8 +311,10 @@ void *moveThread(void *arg)
         y = nextY;
         pthread_mutex_lock(&mutex);
         labyrinth[y][x].labyrinth = charThread;
+        //labyrinth[y][x].directionsQty++;
+        //labyrinth[y][x].direction[labyrinth[y][x].directionsQty-1] = direction;
+        labyrinth[y][x].direction[labyrinth[y][x].directionsQty] = direction;
         labyrinth[y][x].directionsQty++;
-        labyrinth[y][x].direction[labyrinth[y][x].directionsQty - 1] = direction;
         
         //pthread_mutex_lock(&mutex);
         setCursor(x, y, direction);
