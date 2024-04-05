@@ -8,7 +8,6 @@
 #define MAX_ROWS 100
 #define MAX_COLS 100
 #define MAX_DIRECTIONS 4
-#define MAX_THREADS 100
 #define CHAR_THREAD '?'
 
 int rowsQty, colsQty;
@@ -28,7 +27,8 @@ enum Direction
 // STRUCTS---------------------------------------------
 struct thread_data
 {
-    int x, y;
+    int x;
+    int y;
     enum Direction direction;
     int steps;
 };
@@ -43,6 +43,17 @@ typedef struct
 labyrinth_data labyrinth[MAX_ROWS][MAX_COLS];
 
 // FUNCTIONS-------------------------------------------
+
+/*----------------------------------------------------
+Creates a new thread
+Entries:
+   x: x position
+   y: y position
+   direction: direction of the thread
+   steps: number of steps
+Output:
+   void
+-----------------------------------------------------*/
 void createThread(int x, int y, enum Direction direction, int steps);
 
 /*----------------------------------------------------
@@ -53,10 +64,15 @@ Entries:
 Output:
    void
 -----------------------------------------------------*/
-void setCursor(int x, int y)
+void setCursor(int x, int y, enum Direction direction)
 {
-    // printf("\033[%d;%df", x, y);
-
+    if(direction == UP || direction == DOWN){
+        x = x + 3;
+        y = y + 1;
+    } else if(direction == LEFT || direction == RIGHT){
+        x = x + 3;
+        y = y + 1;
+    }
     printf("\033[%d;%dH", y, x);
     fflush(stdout);
 
@@ -65,6 +81,20 @@ void setCursor(int x, int y)
 
     printf("\033[%d;%dH", rowsQty + 3, 1);
     fflush(stdout);
+}
+
+void printLabyrinthRaw() {
+    printf("[");
+    for (int i = 0; i < rowsQty; i++) {
+        if (i > 0) printf(",\n"); // Añade una nueva línea entre filas, excepto antes de la primera
+        printf("(");
+        for (int j = 0; j < colsQty; j++) {
+            printf("(%d, %d, %c)", i, j, labyrinth[i][j].labyrinth);
+            if (j < colsQty - 1) printf(", "); // No añade coma después del último elemento
+        }
+        printf(")");
+    }
+    printf("]\n");
 }
 
 /*----------------------------------------------------
@@ -171,6 +201,7 @@ Verifies if the thread can move in a specific direction
 Entries:
     x: x position
     y: y position
+    direction: direction of the thread
 Output:
     void
 -----------------------------------------------------*/
@@ -180,10 +211,18 @@ void verifyPath(int x, int y, enum Direction direction)
     for (int dir = 0; dir < MAX_DIRECTIONS; dir++) {
         int newX = x, newY = y;
         switch (dir) {
-            case UP:    newY--; break;
-            case DOWN:  newY++; break;
-            case LEFT:  newX--; break;
-            case RIGHT: newX++; break;
+            case UP:    
+                newY--; 
+                break;
+            case DOWN:  
+                newY++; 
+                break;
+            case LEFT:  
+                newX--; 
+                break;
+            case RIGHT: 
+                newX++; 
+                break;
         }
         // Verifica si la posición está dentro de los límites y no es un obstáculo ni una posición visitada
         if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
@@ -214,8 +253,8 @@ void *moveThread(void *arg)
     if ((x >= 0 && x < colsQty) && (y >= 0 && y < rowsQty) &&
         (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/')) {
         labyrinth[y][x].labyrinth = CHAR_THREAD;  
-        printLabyrinth();
-        // setCursor(x+3, y+2);
+        //printLabyrinth();
+        setCursor(x, y, direction);
         sleep(1);
     }
     
@@ -261,8 +300,8 @@ void *moveThread(void *arg)
         labyrinth[y][x].labyrinth = CHAR_THREAD;
         labyrinth[y][x].directionsQty++;
         labyrinth[y][x].direction[labyrinth[y][x].directionsQty - 1] = direction;
-        printLabyrinth();
-        // setCursor(x+3, y+2);
+        //printLabyrinth();
+        setCursor(x, y, direction);
         // verifyPath(x, y, direction);
 
         steps++;
@@ -273,12 +312,13 @@ void *moveThread(void *arg)
     return NULL;
 }
 
-
-
 /*----------------------------------------------------
 Creates a new thread
 Entries:
-   None
+   x: x position
+   y: y position
+   direction: direction of the thread
+   steps: number of steps
 Output:
    void
 -----------------------------------------------------*/
@@ -306,7 +346,7 @@ void createThread(int x, int y, enum Direction direction, int steps) {
     // pthread_join(thread, NULL);
     pthread_detach(thread);
 
-    printf("Thread creado\n");
+    //printf("Thread creado\n");
 }
 
 
@@ -314,7 +354,9 @@ void createThread(int x, int y, enum Direction direction, int steps) {
 // MAIN-----------------------------------------------
 int main()
 {
-    readLabyrinth("inputs/lab1.txt");
+    printf("Iniciando programa\n");
+    readLabyrinth("inputs/lab2.txt");
+    //printLabyrinthRaw();
     printLabyrinth();
     createThread(0, 0, DOWN, 0);
     // createThread(0, 0, RIGHT, 0);
