@@ -8,12 +8,12 @@
 #define MAX_ROWS 100
 #define MAX_COLS 100
 #define MAX_DIRECTIONS 4
-#define CHAR_THREAD '?'
 
+char charThread = '?';
 int rowsQty, colsQty;
 int foundExit = 0;
 int threadsQty = 0;
-// Declarar el mutex
+// Define the mutex
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // ENUMS-----------------------------------------------
@@ -67,42 +67,33 @@ Output:
 -----------------------------------------------------*/
 void setCursor(int x, int y, enum Direction direction)
 {
-    // if(direction == UP || direction == DOWN){
-    //     x = x + 3;
-    //     y = y + 1;
-    // } else if(direction == LEFT || direction == RIGHT){
-    //     x = x + 3;
-    //     y = y + 1;
-    // }
     x = ((x + 1) * 3) + x;
     y = y + 2;
+
+    if(direction == UP){
+        charThread = '^';
+        printf("\033[36m"); // Cian
+    } else if(direction == DOWN){
+        charThread = 'v';
+        printf("\033[35m"); // Magenta
+    } else if(direction == LEFT){
+        charThread = '<';
+        printf("\033[34m"); // Azul
+    } else if(direction == RIGHT){
+        charThread = '>';
+        printf("\033[33m"); // Amarillo
+    }
     printf("\033[%d;%dH", y, x);
     fflush(stdout);
 
-    printf("%c", CHAR_THREAD);
+    printf("%c", charThread);
+    fflush(stdout);
+
+    printf("\033[0m"); 
     fflush(stdout);
 
     printf("\033[%d;%dH", rowsQty + 4, 1);
     fflush(stdout);
-}
-
-void printLabyrinthRaw()
-{
-    printf("[");
-    for (int i = 0; i < rowsQty; i++)
-    {
-        if (i > 0)
-            printf(",\n"); // Añade una nueva línea entre filas, excepto antes de la primera
-        printf("(");
-        for (int j = 0; j < colsQty; j++)
-        {
-            printf("(%d, %d, %c)", i, j, labyrinth[i][j].labyrinth);
-            if (j < colsQty - 1)
-                printf(", "); // No añade coma después del último elemento
-        }
-        printf(")");
-    }
-    printf("]\n");
 }
 
 /*----------------------------------------------------
@@ -214,7 +205,6 @@ Output:
 -----------------------------------------------------*/
 void verifyPath(int x, int y, enum Direction direction)
 {
-    // Verifica si hay posibles caminos alrededor de la celda actual
     for (int dir = 0; dir < MAX_DIRECTIONS; dir++)
     {
         int newX = x, newY = y;
@@ -233,7 +223,13 @@ void verifyPath(int x, int y, enum Direction direction)
             newX++;
             break;
         }
-        // Verifica si la posición está dentro de los límites y no es un obstáculo ni una posición visitada
+
+        // for(int i = 0; i < labyrinth[y][x].directionsQty; i++){
+        //     if(labyrinth[y][x].direction[i] == (enum Direction)dir){
+        //         return;
+        //     }
+        // }
+        
         if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
             labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0)
         {
@@ -263,8 +259,8 @@ void *moveThread(void *arg)
     if ((x >= 0 && x < colsQty) && (y >= 0 && y < rowsQty) &&
         (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/'))
     {
-        labyrinth[y][x].labyrinth = CHAR_THREAD;
-        // printLabyrinth();
+        labyrinth[y][x].labyrinth = charThread;
+
         pthread_mutex_lock(&mutex);
         setCursor(x, y, direction);
         pthread_mutex_unlock(&mutex);
@@ -308,20 +304,19 @@ void *moveThread(void *arg)
         if (labyrinth[nextY][nextX].labyrinth == '/')
         {
             foundExit = 1;
-            break; // Termina el loop y sale de la función, lo que termina el thread.
+            break;
         }
 
         x = nextX;
         y = nextY;
-
-        labyrinth[y][x].labyrinth = CHAR_THREAD;
+        pthread_mutex_lock(&mutex);
+        labyrinth[y][x].labyrinth = charThread;
         labyrinth[y][x].directionsQty++;
         labyrinth[y][x].direction[labyrinth[y][x].directionsQty - 1] = direction;
-        // printLabyrinth();
-        pthread_mutex_lock(&mutex);
+        
+        //pthread_mutex_lock(&mutex);
         setCursor(x, y, direction);
         pthread_mutex_unlock(&mutex);
-        // verifyPath(x, y, direction);
 
         steps++;
         usleep(500000);
@@ -364,29 +359,23 @@ void createThread(int x, int y, enum Direction direction, int steps)
         return;
     }
 
-    // Opcionalmente, puedes hacer join o detach del hilo aquí
-    // pthread_join(thread, NULL);
     pthread_detach(thread);
-
-    // printf("Thread creado\n");
 }
 
 // MAIN-----------------------------------------------
 int main()
 {
-    printf("Iniciando programa\n");
-    readLabyrinth("inputs/lab2.txt");
-    // printLabyrinthRaw();
+    printf("Iniciando programa...\n");
+    readLabyrinth("inputs/lab1.txt");
     printLabyrinth();
     createThread(0, 0, DOWN, 0);
-    // setCursor(3, 2, DOWN);
-    // createThread(0, 0, RIGHT, 0);
     while (!foundExit)
     {
-        // sleep(1);
+
     }
 
     printf("Salida encontrada. Terminando programa.\n");
-    printf("Threads creados: %d\n", threadsQty);
-    return 0; // Sale del programa.
+    printf("Cantidad de threads creados: %d\n", threadsQty);
+
+    return 0;
 }
