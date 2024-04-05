@@ -268,7 +268,7 @@ void updateThreadInfo(int id, int x, int y, int steps, enum threadStatus status)
 void printStatistics() {
     printf("Cantidad de threads creados: %d\n", threadsQty);
 
-    printf("Información de los threads", threadsQty);
+    printf("Información de los threads:\n");
 
     for (int i = 0; i < threadsQty; i++) {
         printf("\nThread %d:\n", thread_data[i].threadId);
@@ -498,8 +498,8 @@ int main()
     }
 
     printf("Salida encontrada. Terminando programa.\n");
-    printf("Cantidad de threads creados: %d\n", threadsQty);
-
+    //printf("Cantidad de threads creados: %d\n", threadsQty);
+    sleep(2);
     printStatistics();
 
     free(thread_data);
