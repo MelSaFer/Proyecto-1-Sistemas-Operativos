@@ -3,11 +3,22 @@
   "configurations": [
     {
       "name": "C/C++ Runner: Debug Session",
-      "type": "lldb",
+      "type": "cppdbg",
       "request": "launch",
       "args": [],
-      "cwd": "/Users/mois/Desktop/repos/Proyecto-1-Sistemas-Operativos",
-      "program": "/Users/mois/Desktop/repos/Proyecto-1-Sistemas-Operativos/build/Debug/outDebug"
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "d:/Git/SO/Proyecto-1-Sistemas-Operativos",
+      "program": "d:/Git/SO/Proyecto-1-Sistemas-Operativos/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     }
   ]
 }

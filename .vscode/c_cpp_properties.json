@@ -1,7 +1,7 @@
 {
   "configurations": [
     {
-      "name": "macos-gcc-x64",
+      "name": "windows-gcc-x64",
       "includePath": [
         "${workspaceFolder}/**",
         "C:/msys64/ucrt64/include/ncurses"
@@ -14,7 +14,7 @@
       "compilerPath": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
       "cStandard": "c17",
       "cppStandard": "gnu++17",
-      "intelliSenseMode": "macos-gcc-x64"
+      "intelliSenseMode": "windows-gcc-x64"
     }
   ],
   "version": 4
