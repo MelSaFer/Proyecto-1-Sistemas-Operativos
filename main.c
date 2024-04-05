@@ -265,6 +265,13 @@ void updateThreadInfo(int id, int x, int y, int steps, enum threadStatus status)
     }
 }
 
+/*----------------------------------------------------
+Prints the statistics of the threads
+Entries:
+    None
+Output:
+    void
+-----------------------------------------------------*/
 void printStatistics() {
     printf("Cantidad de threads creados: %d\n", threadsQty);
 
