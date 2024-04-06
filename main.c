@@ -36,7 +36,7 @@ enum threadStatus
 // STRUCTS---------------------------------------------
 struct thread_data
 {
-    int threadId;
+    int thisThreadId;
     int x;
     int y;
     enum Direction direction;
@@ -230,8 +230,7 @@ void saveThreadInfo(int x, int y, enum Direction direction, int steps, enum thre
         return;
     }
 
-    thread_data[threadsQty].threadId = threadsQty + 1;
-    thread_data[threadsQty].x = x;
+    thread_data[threadsQty].thisThreadId = threadsQty;
     thread_data[threadsQty].y = y;
     thread_data[threadsQty].direction = direction;
     thread_data[threadsQty].steps = steps;
@@ -253,12 +252,11 @@ Output:
 void updateThreadInfo(int id, int x, int y, int steps, enum threadStatus status)
 {
     for (int i = 0; i < threadsQty; i++) {
-        if (thread_data[i].threadId == id) {
+        if (thread_data[i].thisThreadId == id) {
             thread_data[i].status = status;
-            thread_data[i].steps = steps;
+            thread_data[i].steps++;
             thread_data[i].x = x;
             thread_data[i].y = y;
-            //thread_data[i].direction = direction;
 
             break;
         }
@@ -278,7 +276,7 @@ void printStatistics() {
     printf("Información de los threads:\n");
 
     for (int i = 0; i < threadsQty; i++) {
-        printf("\nThread %d:\n", thread_data[i].threadId);
+        printf("\nThread %d:\n", thread_data[i].thisThreadId);
         printf("  Posición Inicial: (%d, %d)\n", thread_data[i].x, thread_data[i].y);
         printf("  Dirección: %d\n", thread_data[i].direction);
         printf("  Pasos: %d\n", thread_data[i].steps);
@@ -295,8 +293,8 @@ Output:
 -----------------------------------------------------*/
 void printAnStatistic(int id) {
     for (int i = 0; i < threadsQty; i++) {
-        if(thread_data[i].threadId == id){
-            printf("\nThread %d:\n", thread_data[i].threadId);
+        if(thread_data[i].thisThreadId == id){
+            printf("\nThread %d:\n", thread_data[i].thisThreadId);
             printf("  Posición Inicial: (%d, %d)\n", thread_data[i].x, thread_data[i].y);
             printf("  Dirección: %d\n", thread_data[i].direction);
             printf("  Pasos: %d\n", thread_data[i].steps);
@@ -383,7 +381,7 @@ void *moveThread(void *arg)
 {
     // Extracts the thread data
     struct thread_data *data = (struct thread_data *)arg;
-    int id = data->threadId;
+    int id = data->thisThreadId;
     int x = data->x;
     int y = data->y;
     enum Direction direction = data->direction;
@@ -396,7 +394,6 @@ void *moveThread(void *arg)
         (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/'))
     {
         labyrinth[y][x].labyrinth = charThread;
-
         pthread_mutex_lock(&mutex);
         setCursor(x, y, direction);
         pthread_mutex_unlock(&mutex);
@@ -430,13 +427,14 @@ void *moveThread(void *arg)
             break;
         }
 
+        
+
         // Verifies if the next step is an obstacle or the exit
         if (labyrinth[nextY][nextX].labyrinth == '*')
         {
             status = FINISHED_WITHOUT_EXIT;
             updateThreadInfo(id, x, y, steps, status);
-            printAnStatistic(id);
-            sleep(10);
+            //printAnStatistic(id);
             break;
         }
 
@@ -457,10 +455,9 @@ void *moveThread(void *arg)
         labyrinth[y][x].direction[labyrinth[y][x].directionsQty] = direction;
         labyrinth[y][x].directionsQty++;
         setCursor(x, y, direction);
+        steps++;
         updateThreadInfo(id, x, y, steps, status);
         pthread_mutex_unlock(&mutex);
-        
-
         
         usleep(500000);
         sleep(1);
@@ -495,6 +492,7 @@ void createThread(int x, int y, enum Direction direction, int steps)
     data->direction = direction;
     data->steps = steps;
     data->status = RUNNING;
+    data->thisThreadId = threadsQty;
 
     pthread_t thread;
     if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0)
