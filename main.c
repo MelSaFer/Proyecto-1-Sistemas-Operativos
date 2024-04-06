@@ -254,7 +254,7 @@ void updateThreadInfo(int id, int x, int y, int steps, enum threadStatus status)
     for (int i = 0; i < threadsQty; i++) {
         if (thread_data[i].thisThreadId == id) {
             thread_data[i].status = status;
-            thread_data[i].steps++;
+            thread_data[i].steps = steps;
             thread_data[i].x = x;
             thread_data[i].y = y;
 
@@ -311,64 +311,73 @@ Entries:
 Output:
     void
 -----------------------------------------------------*/
-void verifyPath(int x, int y, enum Direction direction)
-{
-    bool flag = true;
-    for (int dir = 0; dir < MAX_DIRECTIONS; dir++)
-    {
-        flag = true;
+void verifyPath(int x, int y, enum Direction direction) {
+    for (int dir = 0; dir < MAX_DIRECTIONS; dir++) {
         int newX = x, newY = y;
-        if (dir == 0 && direction == UP){
-        //printf("Case 1");
-        flag = !flag;
-            continue;}
-        if (dir == 1 && direction == DOWN){
-        flag = !flag;
-            continue;}
-        if (dir == 2 && direction == LEFT){
-        flag = !flag;
-            continue;}
-        if (dir == 3 && direction == RIGHT){
-        flag = !flag;
-            continue;}
-
-        switch (dir)
-        {
-        case 0: // up
-            newY--;
-            break;
-        case 1: // down
-            newY++;
-            break;
-        case 2: // left
-            newX--;
-            break;
-        case 3: // right
-            newX++;
-            break;
+        if ((dir == 0 && direction == UP) ||
+            (dir == 1 && direction == DOWN) ||
+            (dir == 2 && direction == LEFT) ||
+            (dir == 3 && direction == RIGHT)) {
+            continue;
         }
 
-        // bool hasPassedDirection = false;
-        // for (int i = 0; i < labyrinth[y][x].directionsQty; i++) {
-        //     if (labyrinth[y][x].direction[i] == direction) {
-        //         hasPassedDirection = true;
-        //         printf("Ha pasado por la direccion %d\n", direction);
-        //         break;
-        //     }
-        // }
-        
+        switch (dir) {
+            case 0: // up
+                newY--;
+                break;
+            case 1: // down
+                newY++;
+                break;
+            case 2: // left
+                newX--;
+                break;
+            case 3: // right
+                newX++;
+                break;
+        }
+
         if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
-            labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0 && flag)
-        {
+            labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0) {
             createThread(newX, newY, (enum Direction)dir, 0);
         }
-        // if (!hasPassedDirection) {
-        //     createThread(newX, newY, (enum Direction)dir, 0);
-        // }
     }
 }
 
+// Verifica si las coordenadas están dentro del laberinto
+int isInsideLabyrinth(int x, int y) {
+    return (x >= 0 && x < colsQty && y >= 0 && y < rowsQty);
+}
 
+// Verifica si una celda es transitable
+int isWalkable(int x, int y) {
+    return (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/');
+}
+
+// Verifica si una celda es un obstáculo
+int isObstacle(int x, int y) {
+    return (labyrinth[y][x].labyrinth == '*');
+}
+
+// Verifica si una celda es la salida
+int isExit(int x, int y) {
+    return (labyrinth[y][x].labyrinth == '/');
+}
+
+// Actualiza la posición y estado del hilo
+void updateThreadPosition(int id, int x, int y, int steps, enum Direction direction, enum threadStatus status) {
+    pthread_mutex_lock(&mutex);
+    labyrinth[y][x].labyrinth = charThread;
+    setCursor(x, y, direction);
+    updateThreadInfo(id, x, y, steps, status);
+    pthread_mutex_unlock(&mutex);
+}
+
+// Actualiza el estado del hilo
+void updateThreadStatus(int id, int x, int y, int steps, enum threadStatus status) {
+    pthread_mutex_lock(&mutex);
+    updateThreadInfo(id, x, y, steps, status);
+    pthread_mutex_unlock(&mutex);
+}
 
 /*----------------------------------------------------
 Moves the thread in the labyrinth
@@ -390,77 +399,54 @@ void *moveThread(void *arg)
     free(data);
 
     // Sets the the thread in the initial position
-    if ((x >= 0 && x < colsQty) && (y >= 0 && y < rowsQty) &&
-        (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/'))
-    {
-        labyrinth[y][x].labyrinth = charThread;
-        pthread_mutex_lock(&mutex);
-        setCursor(x, y, direction);
-        pthread_mutex_unlock(&mutex);
-        sleep(1);
+    if (isInsideLabyrinth(x, y) && isWalkable(x, y)) {
+        steps++;
+        updateThreadPosition(id, x, y, steps, direction, status);
+        usleep(1000000);
     }
 
     while (!foundExit)
     {
-        int nextX = x, nextY = y;
+       int nextX = x, nextY = y;
         verifyPath(x, y, direction);
 
-        switch (direction)
-        {
-        case UP:
-            nextY--;
-            break;
-        case DOWN:
-            nextY++;
-            break;
-        case LEFT:
-            nextX--;
-            break;
-        case RIGHT:
-            nextX++;
-            break;
+        switch (direction) {
+            case UP:
+                nextY--;
+                break;
+            case DOWN:
+                nextY++;
+                break;
+            case LEFT:
+                nextX--;
+                break;
+            case RIGHT:
+                nextX++;
+                break;
         }
 
-        // Verifies if the next step is out of bounds
-        if (nextX < 0 || nextX >= colsQty || nextY < 0 || nextY >= rowsQty)
-        {
+        if (!isInsideLabyrinth(nextX, nextY))
             break;
-        }
 
-        
-
-        // Verifies if the next step is an obstacle or the exit
-        if (labyrinth[nextY][nextX].labyrinth == '*')
-        {
+        if (isObstacle(nextX, nextY)) {
             status = FINISHED_WITHOUT_EXIT;
-            updateThreadInfo(id, x, y, steps, status);
-            //printAnStatistic(id);
+            updateThreadStatus(id, x, y, steps, status);
             break;
         }
 
-        // Verifies if the next step is the exit
-        if (labyrinth[nextY][nextX].labyrinth == '/')
-        {
+        if (isExit(nextX, nextY)) {
             foundExit = 1;
             status = FINISHED_WITH_EXIT;
-            updateThreadInfo(id, x, y, steps, status);
+            updateThreadStatus(id, x, y, steps, status);
             break;
         }
 
         x = nextX;
         y = nextY;
-        
-        pthread_mutex_lock(&mutex);
-        labyrinth[y][x].labyrinth = charThread;
-        labyrinth[y][x].direction[labyrinth[y][x].directionsQty] = direction;
-        labyrinth[y][x].directionsQty++;
-        setCursor(x, y, direction);
         steps++;
-        updateThreadInfo(id, x, y, steps, status);
-        pthread_mutex_unlock(&mutex);
-        
+        updateThreadPosition(id, x, y, steps, direction, status);
         usleep(500000);
-        sleep(1);
+        usleep(1000000);
     }
 
     return NULL;
