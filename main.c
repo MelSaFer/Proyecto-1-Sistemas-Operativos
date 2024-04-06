@@ -534,13 +534,34 @@ void updateThreadPosition(int id, int x, int y, int steps, enum Direction direct
     pthread_mutex_unlock(&mutex);
 }
 
-// Actualiza el estado del hilo
+/*----------------------------------------------------
+Updates the status of the thread
+Entries:
+    id: thread id
+    x: x position
+    y: y position
+    steps: number of steps
+    status: status of the thread
+Output:
+    void
+-----------------------------------------------------*/
 void updateThreadStatus(int id, int x, int y, int steps, enum threadStatus status) {
     pthread_mutex_lock(&mutex);
     updateThreadInfo(id, x, y, steps, status);
     pthread_mutex_unlock(&mutex);
 }
 
+/*----------------------------------------------------
+Sets the thread as finished without exit
+Entries:
+    id: thread id
+    x: x position
+    y: y position
+    steps: number of steps
+    status: status of the thread
+Output:
+    void
+-----------------------------------------------------*/
 void setFinished(int id, int x, int y, int steps, enum threadStatus status){
     status = FINISHED_WITHOUT_EXIT;
     updateThreadStatus(id, x, y, steps, status);
