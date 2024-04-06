@@ -14,6 +14,7 @@ char charThread = '?';
 int rowsQty, colsQty;
 int foundExit = 0;
 int threadsQty = 0;
+int controlStats = 0;
 // Define the mutex
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -202,6 +203,7 @@ void readLabyrinth(char *fileName)
             column++;
         }
     }
+    controlStats = rowsQty + 4;
 
     fclose(file);
 }
@@ -284,6 +286,7 @@ void printStatistics() {
     }
 }
 
+
 /*----------------------------------------------------
 Prints the statistics of the threads
 Entries:
@@ -292,16 +295,28 @@ Output:
     void
 -----------------------------------------------------*/
 void printAnStatistic(int id) {
+    pthread_mutex_lock(&mutex);
+
+    printf("\033[%d;%dH", controlStats, 1);
+    fflush(stdout);
+    
+
     for (int i = 0; i < threadsQty; i++) {
         if(thread_data[i].thisThreadId == id){
-            printf("\nThread %d:\n", thread_data[i].thisThreadId);
+            printf("\n*El thread %d ha terminado*\n", thread_data[i].thisThreadId);
             printf("  Posición Inicial: (%d, %d)\n", thread_data[i].x, thread_data[i].y);
             printf("  Dirección: %d\n", thread_data[i].direction);
             printf("  Pasos: %d\n", thread_data[i].steps);
             printf("  Estado: %d\n", thread_data[i].status);
         }
     }
+    //controlStats= controlStats + 6;
+    //printf("\033[%d;%dH", rowsQty+4, 1);
+    //fflush(stdout);
+    pthread_mutex_unlock(&mutex);
 }
+
+
 /*----------------------------------------------------
 Verifies if the thread can move in a specific direction
 Entries:
@@ -366,8 +381,10 @@ int isExit(int x, int y) {
 // Actualiza la posición y estado del hilo
 void updateThreadPosition(int id, int x, int y, int steps, enum Direction direction, enum threadStatus status) {
     pthread_mutex_lock(&mutex);
-    labyrinth[y][x].labyrinth = charThread;
     setCursor(x, y, direction);
+    labyrinth[y][x].labyrinth = charThread;
+    labyrinth[y][x].direction[labyrinth[y][x].directionsQty] = direction;
+    labyrinth[y][x].directionsQty++;
     updateThreadInfo(id, x, y, steps, status);
     pthread_mutex_unlock(&mutex);
 }
@@ -431,6 +448,7 @@ void *moveThread(void *arg)
         if (isObstacle(nextX, nextY)) {
             status = FINISHED_WITHOUT_EXIT;
             updateThreadStatus(id, x, y, steps, status);
+            printAnStatistic(id);
             break;
         }
 
@@ -494,6 +512,21 @@ void createThread(int x, int y, enum Direction direction, int steps)
     threadsQty++;
     
     pthread_detach(thread);
+}
+
+void printLabyrinthData() {
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            printf("Position [%d][%d]:\n", i, j);
+            printf("  Labyrinth: %c\n", labyrinth[i][j].labyrinth);
+            printf("  Directions Quantity: %d\n", labyrinth[i][j].directionsQty);
+            printf("  Directions:");
+            for (int k = 0; k < labyrinth[i][j].directionsQty; k++) {
+                printf(" %d", labyrinth[i][j].direction[k]);
+            }
+            printf("\n");
+        }
+    }
 }
 
 // MAIN-----------------------------------------------
