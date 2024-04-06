@@ -287,6 +287,24 @@ void printStatistics() {
 }
 
 /*----------------------------------------------------
+Prints the statistics of the threads
+Entries:
+    None
+Output:
+    void
+-----------------------------------------------------*/
+void printAnStatistic(int id) {
+    for (int i = 0; i < threadsQty; i++) {
+        if(thread_data[i].threadId == id){
+            printf("\nThread %d:\n", thread_data[i].threadId);
+            printf("  Posición Inicial: (%d, %d)\n", thread_data[i].x, thread_data[i].y);
+            printf("  Dirección: %d\n", thread_data[i].direction);
+            printf("  Pasos: %d\n", thread_data[i].steps);
+            printf("  Estado: %d\n", thread_data[i].status);
+        }
+    }
+}
+/*----------------------------------------------------
 Verifies if the thread can move in a specific direction
 Entries:
     x: x position
@@ -417,6 +435,8 @@ void *moveThread(void *arg)
         {
             status = FINISHED_WITHOUT_EXIT;
             updateThreadInfo(id, x, y, steps, status);
+            printAnStatistic(id);
+            sleep(10);
             break;
         }
 
