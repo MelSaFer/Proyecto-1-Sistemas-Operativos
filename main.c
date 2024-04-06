@@ -1,9 +1,9 @@
 #include <stdio.h>
-// #include <curses.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <string.h>
 
 // VARIABLES---------------------------------------------
 #define MAX_ROWS 100
@@ -18,7 +18,7 @@ int controlStats = 0;
 // Define the mutex
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// ENUMS-----------------------------------------------
+// ENUMS----------------------------------------------------------------------
 enum Direction
 {
     UP,
@@ -34,7 +34,7 @@ enum threadStatus
     FINISHED_WITH_EXIT
 };
 
-// STRUCTS---------------------------------------------
+// STRUCTS---------------------------------------------------------------------
 struct thread_data
 {
     int thisThreadId;
@@ -56,7 +56,7 @@ typedef struct
 
 labyrinth_data labyrinth[MAX_ROWS][MAX_COLS];
 
-// FUNCTIONS-------------------------------------------
+// FUNCTIONS-----------------------------------------------------------------------
 
 /*----------------------------------------------------
 Creates a new thread
@@ -69,6 +69,8 @@ Output:
    void
 -----------------------------------------------------*/
 void createThread(int x, int y, enum Direction direction, int steps);
+
+// -> CONSOLE RELATED FUNCTIONS-----------------------
 
 /*----------------------------------------------------
 Set cursor position
@@ -169,15 +171,16 @@ Entries:
 Output:
    void
 -----------------------------------------------------*/
-void readLabyrinth(char *fileName)
+bool readLabyrinth(char *fileName)
 {
     FILE *file;
     file = fopen(fileName, "r");
 
+
     if (file == NULL)
     {
-        printf("Error opening file\n");
-        return;
+        printf("El archivo no existe\n");
+        return false;
     }
 
     // obtains the number of rows and columns
@@ -203,10 +206,241 @@ void readLabyrinth(char *fileName)
             column++;
         }
     }
-    controlStats = rowsQty + 4;
+    
 
     fclose(file);
+    return true;
 }
+
+/*----------------------------------------------------
+Prints the status name of threads
+Entries:
+   state: state of the thread
+Output:
+    char*: name of the state
+-----------------------------------------------------*/
+const char* getStatusName(enum threadStatus status) {
+    switch (status) {
+        case RUNNING:
+            return "RUNNING";
+        case FINISHED_WITHOUT_EXIT:
+            return "FINISHED_WITHOUT_EXIT";
+        case FINISHED_WITH_EXIT:
+            return "FINISHED_WITH_EXIT";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+/*----------------------------------------------------
+Prints the direction name of threads
+Entries:
+   direction: direction of the thread
+Output:
+    char*: name of the direction
+-----------------------------------------------------*/
+const char* getDirectionName(enum Direction direction) {
+    switch (direction) {
+        case UP:
+            return "UP";
+        case DOWN:
+            return "DOWN";
+        case LEFT:
+            return "LEFT";
+        case RIGHT:
+            return "RIGHT";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+
+// -> STATISTICS RELATED FUNCTIONS--------------------
+
+/*----------------------------------------------------
+Prints the statistics of the threads
+Entries:
+    None
+Output:
+    void
+-----------------------------------------------------*/
+void printStatistics() {
+
+    printf("\033[%d;%dH", controlStats, 1);
+    fflush(stdout);
+    
+    printf("Cantidad de threads creados: %d\n", threadsQty);
+    printf("Información de los threads:\n");
+
+    printf("+-----+----+----+-----------+-------+------------------------+\n");
+    printf("| id  | x  | y  | direccion | pasos | estado                 |\n");
+    printf("+-----+----+----+-----------+-------+------------------------+\n");
+
+    for (int i = 0; i < threadsQty; i++) {
+        printf("| %-3d | %-2d | %-2d | %-9s | %-5d | %-22s |\n", 
+            thread_data[i].thisThreadId,
+            thread_data[i].x, 
+            thread_data[i].y, 
+            getDirectionName(thread_data[i].direction), 
+            thread_data[i].steps, 
+            getStatusName(thread_data[i].status));
+        
+        printf("+-----+----+----+-----------+-------+------------------------+\n");
+    }
+}
+
+
+/*----------------------------------------------------
+Prints the statistics of an specific thread
+Entries:
+    id: thread id
+Output:
+    void
+-----------------------------------------------------*/
+void printAnStatistic(int id) {
+    pthread_mutex_lock(&mutex);
+
+    printf("\033[%d;%dH", controlStats, 1);
+    fflush(stdout);
+    
+
+    for (int i = 0; i < threadsQty; i++) {
+        if (thread_data[i].thisThreadId == id) {
+            printf("\n*El thread %d ha terminado*\n", thread_data[i].thisThreadId);
+            
+            
+            printf("+----+----+-----------+-------+-----------------------+\n");
+            printf("| x  | y  | direccion | pasos | estado                |\n");
+            printf("+----+----+-----------+-------+-----------------------+\n");
+            
+            
+            printf("| %-2d | %-2d | %-9s | %-5d | %-20s |\n", 
+                thread_data[i].x, 
+                thread_data[i].y, 
+                getDirectionName(thread_data[i].direction), 
+                thread_data[i].steps, 
+                getStatusName(thread_data[i].status));
+            
+            
+            printf("+----+----+-----------+-------+-----------------------+\n");
+        }
+    }
+    //controlStats= controlStats + 6;
+    //printf("\033[%d;%dH", rowsQty+4, 1);
+    //fflush(stdout);
+    pthread_mutex_unlock(&mutex);
+}
+
+
+// -> LABYRINTH VERIFICATION FUNCTIONS----------------
+/*----------------------------------------------------
+Verifies if a cell is inside the labyrinth
+Entries:
+    x: x position
+    y: y position
+Output:
+    1 if the cell is inside the labyrinth, 0 otherwise
+-----------------------------------------------------*/
+int isInsideLabyrinth(int x, int y) {
+    return (x >= 0 && x < colsQty && y >= 0 && y < rowsQty);
+}
+
+/*----------------------------------------------------
+Verifies if a cell is walkable
+Entries:
+    x: x position
+    y: y position
+Output:
+    1: if the cell is walkable
+    0: otherwise
+-----------------------------------------------------*/
+int isWalkable(int x, int y) {
+    return (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/');
+}
+
+/*----------------------------------------------------
+Verifies if a cell is an obstacle
+Entries:
+    x: x position
+    y: y position
+Output:
+    1: if the cell is an obstacle
+    0: otherwise
+-----------------------------------------------------*/
+int isObstacle(int x, int y) {
+    return (labyrinth[y][x].labyrinth == '*');
+}
+
+/*----------------------------------------------------
+Verifies if a cell is the exit
+Entries:
+    x: x position
+    y: y position
+Output:
+    1: if the cell is the exit
+    0: otherwise
+-----------------------------------------------------*/
+int isExit(int x, int y) {
+    return (labyrinth[y][x].labyrinth == '/');
+}
+
+/*----------------------------------------------------
+Verifies if the thread can move in a specific direction
+Entries:
+    x: x position
+    y: y position
+    direction: direction of the thread
+Output:
+    void
+-----------------------------------------------------*/
+void verifyPath(int x, int y, enum Direction direction) {
+    for (int dir = 0; dir < MAX_DIRECTIONS; dir++) {
+        int newX = x, newY = y;
+        if ((dir == 0 && direction == UP) ||
+            (dir == 1 && direction == DOWN) ||
+            (dir == 2 && direction == LEFT) ||
+            (dir == 3 && direction == RIGHT)) {
+            continue;
+        }
+
+        switch (dir) {
+            case 0: // up
+                newY--;
+                break;
+            case 1: // down
+                newY++;
+                break;
+            case 2: // left
+                newX--;
+                break;
+            case 3: // right
+                newX++;
+                break;
+        }
+
+        if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
+            labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0) {
+            createThread(newX, newY, (enum Direction)dir, 0);
+        }
+    }
+}
+
+void printLabyrinthData() {
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            printf("Position [%d][%d]:\n", i, j);
+            printf("  Labyrinth: %c\n", labyrinth[i][j].labyrinth);
+            printf("  Directions Quantity: %d\n", labyrinth[i][j].directionsQty);
+            printf("  Directions:");
+            for (int k = 0; k < labyrinth[i][j].directionsQty; k++) {
+                printf(" %d", labyrinth[i][j].direction[k]);
+            }
+            printf("\n");
+        }
+    }
+}
+
+// -> THREAD RELATED FUNCTIONS-----------------------
 
 /*----------------------------------------------------
 Saves the information of a thread
@@ -266,119 +500,17 @@ void updateThreadInfo(int id, int x, int y, int steps, enum threadStatus status)
 }
 
 /*----------------------------------------------------
-Prints the statistics of the threads
+Updates the position of the thread
 Entries:
-    None
-Output:
-    void
------------------------------------------------------*/
-void printStatistics() {
-    printf("Cantidad de threads creados: %d\n", threadsQty);
-
-    printf("Información de los threads:\n");
-
-    for (int i = 0; i < threadsQty; i++) {
-        printf("\nThread %d:\n", thread_data[i].thisThreadId);
-        printf("  Posición Inicial: (%d, %d)\n", thread_data[i].x, thread_data[i].y);
-        printf("  Dirección: %d\n", thread_data[i].direction);
-        printf("  Pasos: %d\n", thread_data[i].steps);
-        printf("  Estado: %d\n", thread_data[i].status);
-    }
-}
-
-
-/*----------------------------------------------------
-Prints the statistics of the threads
-Entries:
-    None
-Output:
-    void
------------------------------------------------------*/
-void printAnStatistic(int id) {
-    pthread_mutex_lock(&mutex);
-
-    printf("\033[%d;%dH", controlStats, 1);
-    fflush(stdout);
-    
-
-    for (int i = 0; i < threadsQty; i++) {
-        if(thread_data[i].thisThreadId == id){
-            printf("\n*El thread %d ha terminado*\n", thread_data[i].thisThreadId);
-            printf("  Posición Inicial: (%d, %d)\n", thread_data[i].x, thread_data[i].y);
-            printf("  Dirección: %d\n", thread_data[i].direction);
-            printf("  Pasos: %d\n", thread_data[i].steps);
-            printf("  Estado: %d\n", thread_data[i].status);
-        }
-    }
-    //controlStats= controlStats + 6;
-    //printf("\033[%d;%dH", rowsQty+4, 1);
-    //fflush(stdout);
-    pthread_mutex_unlock(&mutex);
-}
-
-
-/*----------------------------------------------------
-Verifies if the thread can move in a specific direction
-Entries:
+    id: thread id
     x: x position
     y: y position
+    steps: number of steps
     direction: direction of the thread
+    status: status of the thread
 Output:
     void
 -----------------------------------------------------*/
-void verifyPath(int x, int y, enum Direction direction) {
-    for (int dir = 0; dir < MAX_DIRECTIONS; dir++) {
-        int newX = x, newY = y;
-        if ((dir == 0 && direction == UP) ||
-            (dir == 1 && direction == DOWN) ||
-            (dir == 2 && direction == LEFT) ||
-            (dir == 3 && direction == RIGHT)) {
-            continue;
-        }
-
-        switch (dir) {
-            case 0: // up
-                newY--;
-                break;
-            case 1: // down
-                newY++;
-                break;
-            case 2: // left
-                newX--;
-                break;
-            case 3: // right
-                newX++;
-                break;
-        }
-
-        if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
-            labyrinth[newY][newX].labyrinth == ' ' && labyrinth[newY][newX].directionsQty == 0) {
-            createThread(newX, newY, (enum Direction)dir, 0);
-        }
-    }
-}
-
-// Verifica si las coordenadas están dentro del laberinto
-int isInsideLabyrinth(int x, int y) {
-    return (x >= 0 && x < colsQty && y >= 0 && y < rowsQty);
-}
-
-// Verifica si una celda es transitable
-int isWalkable(int x, int y) {
-    return (labyrinth[y][x].labyrinth != '*' && labyrinth[y][x].labyrinth != '/');
-}
-
-// Verifica si una celda es un obstáculo
-int isObstacle(int x, int y) {
-    return (labyrinth[y][x].labyrinth == '*');
-}
-
-// Verifica si una celda es la salida
-int isExit(int x, int y) {
-    return (labyrinth[y][x].labyrinth == '/');
-}
-
-// Actualiza la posición y estado del hilo
 void updateThreadPosition(int id, int x, int y, int steps, enum Direction direction, enum threadStatus status) {
     pthread_mutex_lock(&mutex);
     setCursor(x, y, direction);
@@ -482,8 +614,6 @@ Output:
 -----------------------------------------------------*/
 void createThread(int x, int y, enum Direction direction, int steps)
 {
-    
-    
     struct thread_data *data = malloc(sizeof(struct thread_data));
     if (data == NULL)
     {
@@ -514,27 +644,28 @@ void createThread(int x, int y, enum Direction direction, int steps)
     pthread_detach(thread);
 }
 
-void printLabyrinthData() {
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            printf("Position [%d][%d]:\n", i, j);
-            printf("  Labyrinth: %c\n", labyrinth[i][j].labyrinth);
-            printf("  Directions Quantity: %d\n", labyrinth[i][j].directionsQty);
-            printf("  Directions:");
-            for (int k = 0; k < labyrinth[i][j].directionsQty; k++) {
-                printf(" %d", labyrinth[i][j].direction[k]);
-            }
-            printf("\n");
-        }
-    }
-}
 
-// MAIN-----------------------------------------------
+// MAIN FUNCTION--------------------------------------------------------------
 int main()
 {
+    
+
     printf("Iniciando programa...\n");
-    readLabyrinth("inputs/lab1.txt");
+    char fileName[100];
+    char filePath[150] = "inputs/"; 
+    printf("Por favor, ingresa el nombre del archivo txt: ");
+    scanf("%99s", fileName);
+    strcat(filePath, fileName);
+
+    if((readLabyrinth(filePath)==false)){
+        return 0;
+    }
+
+    
+    readLabyrinth(filePath);
     printLabyrinth();
+    controlStats = rowsQty + 6;
+
     createThread(0, 0, DOWN, 0);
     while (!foundExit)
     {
@@ -542,8 +673,14 @@ int main()
     }
 
     printf("Salida encontrada. Terminando programa.\n");
-    //printf("Cantidad de threads creados: %d\n", threadsQty);
     sleep(2);
+
+    for (int i = 0; i < threadsQty; i++) {
+        if(thread_data[i].status == RUNNING){
+            updateThreadStatus(thread_data[i].thisThreadId, thread_data[i].x, thread_data[i].y, thread_data[i].steps, FINISHED_WITHOUT_EXIT);
+            printAnStatistic(thread_data[i].thisThreadId);
+        }
+    }
     printStatistics();
 
     free(thread_data);
