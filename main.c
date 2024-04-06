@@ -15,6 +15,7 @@ int rowsQty, colsQty;
 int foundExit = 0;
 int threadsQty = 0;
 int controlStats = 0;
+int finishedOrder = 1;
 // Define the mutex
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -43,6 +44,7 @@ struct thread_data
     enum Direction direction;
     int steps;
     enum threadStatus status;
+    int order;
 };
 
 struct thread_data *thread_data = NULL;
@@ -268,24 +270,25 @@ void printStatistics() {
 
     printf("\033[%d;%dH", controlStats, 1);
     fflush(stdout);
-    
+
     printf("Cantidad de threads creados: %d\n", threadsQty);
     printf("Información de los threads:\n");
 
-    printf("+-----+----+----+-----------+-------+------------------------+\n");
-    printf("| id  | x  | y  | direccion | pasos | estado                 |\n");
-    printf("+-----+----+----+-----------+-------+------------------------+\n");
+    printf("+-----+----+----+-----------+-------+------------------------+-------+\n");
+    printf("| id  | x  | y  | direccion | pasos | estado                 | orden |\n");
+    printf("+-----+----+----+-----------+-------+------------------------+-------+\n");
 
     for (int i = 0; i < threadsQty; i++) {
-        printf("| %-3d | %-2d | %-2d | %-9s | %-5d | %-22s |\n", 
+        printf("| %-3d | %-2d | %-2d | %-9s | %-5d | %-22s | %-5d |\n", 
             thread_data[i].thisThreadId,
             thread_data[i].x, 
             thread_data[i].y, 
             getDirectionName(thread_data[i].direction), 
             thread_data[i].steps, 
-            getStatusName(thread_data[i].status));
+            getStatusName(thread_data[i].status),
+            thread_data[i].order);
         
-        printf("+-----+----+----+-----------+-------+------------------------+\n");
+        printf("+-----+----+----+-----------+-------+------------------------+-------+\n");
     }
 }
 
@@ -499,6 +502,16 @@ void updateThreadInfo(int id, int x, int y, int steps, enum threadStatus status)
     }
 }
 
+void setOrder(int id) {
+    for (int i = 0; i < threadsQty; i++) {
+        if (thread_data[i].thisThreadId == id) {
+            thread_data[i].order = finishedOrder;
+            finishedOrder++;
+            break;
+        }
+    }
+}
+
 /*----------------------------------------------------
 Updates the position of the thread
 Entries:
@@ -526,6 +539,13 @@ void updateThreadStatus(int id, int x, int y, int steps, enum threadStatus statu
     pthread_mutex_lock(&mutex);
     updateThreadInfo(id, x, y, steps, status);
     pthread_mutex_unlock(&mutex);
+}
+
+void setFinished(int id, int x, int y, int steps, enum threadStatus status){
+    status = FINISHED_WITHOUT_EXIT;
+    updateThreadStatus(id, x, y, steps, status);
+    setOrder(id);
+    printAnStatistic(id);
 }
 
 /*----------------------------------------------------
@@ -574,17 +594,18 @@ void *moveThread(void *arg)
                 break;
         }
 
-        if (!isInsideLabyrinth(nextX, nextY))
+        if (!isInsideLabyrinth(nextX, nextY)){
+            setFinished(id, x, y, steps, status);
             break;
+        }
 
         if (isObstacle(nextX, nextY)) {
-            status = FINISHED_WITHOUT_EXIT;
-            updateThreadStatus(id, x, y, steps, status);
-            printAnStatistic(id);
+            setFinished(id, x, y, steps, status);
             break;
         }
 
         if (isExit(nextX, nextY)) {
+            setOrder(id);
             foundExit = 1;
             status = FINISHED_WITH_EXIT;
             updateThreadStatus(id, x, y, steps, status);
@@ -627,6 +648,7 @@ void createThread(int x, int y, enum Direction direction, int steps)
     data->steps = steps;
     data->status = RUNNING;
     data->thisThreadId = threadsQty;
+    data->order = 0;
 
     pthread_t thread;
     if (pthread_create(&thread, NULL, moveThread, (void *)data) != 0)
