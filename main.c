@@ -428,20 +428,6 @@ void verifyPath(int x, int y, enum Direction direction) {
     }
 }
 
-void printLabyrinthData() {
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            printf("Position [%d][%d]:\n", i, j);
-            printf("  Labyrinth: %c\n", labyrinth[i][j].labyrinth);
-            printf("  Directions Quantity: %d\n", labyrinth[i][j].directionsQty);
-            printf("  Directions:");
-            for (int k = 0; k < labyrinth[i][j].directionsQty; k++) {
-                printf(" %d", labyrinth[i][j].direction[k]);
-            }
-            printf("\n");
-        }
-    }
-}
 
 // -> THREAD RELATED FUNCTIONS-----------------------
 
@@ -501,6 +487,14 @@ void updateThreadInfo(int id, int x, int y, int steps, enum threadStatus status)
         }
     }
 }
+
+/*----------------------------------------------------
+Sets the order of finished threads
+Entries:
+    id: thread id
+Output:
+    void
+-----------------------------------------------------*/
 
 void setOrder(int id) {
     for (int i = 0; i < threadsQty; i++) {
@@ -721,6 +715,7 @@ int main()
     for (int i = 0; i < threadsQty; i++) {
         if(thread_data[i].status == RUNNING){
             updateThreadStatus(thread_data[i].thisThreadId, thread_data[i].x, thread_data[i].y, thread_data[i].steps, FINISHED_WITHOUT_EXIT);
+            setOrder(thread_data[i].thisThreadId);
             printAnStatistic(thread_data[i].thisThreadId);
         }
     }
