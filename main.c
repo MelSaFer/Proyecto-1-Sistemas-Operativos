@@ -807,15 +807,6 @@ int main()
     printf("Terminando programa.\n");
     sleep(2);
 
-    for (int i = 0; i < threadsQty; i++)
-    {
-        if (thread_data[i].status == RUNNING)
-        {
-            updateThreadStatus(thread_data[i].thisThreadId, thread_data[i].x, thread_data[i].y, thread_data[i].steps, FINISHED_WITHOUT_EXIT);
-            setOrder(thread_data[i].thisThreadId);
-            printAnStatistic(thread_data[i].thisThreadId);
-        }
-    }
     printStatistics();
 
     free(thread_data);
