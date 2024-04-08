@@ -1,3 +1,15 @@
+/*
+Instituto Tecnológico de Costa Rica
+Escuela de Ingeniería en Computación
+Curso: Principios de Sistemas Operativos
+Profesor: Erika Marín Schumman
+Proyecto 1: Laberinto
+Estudiantes:
+    - Salas Fernández Melany - 2021121147
+    - Solano Espinoza Moisés - 2021144322
+
+*/
+
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -12,7 +24,6 @@
 
 char charThread = '?';
 int rowsQty, colsQty;
-// int foundExit = 0;
 int threadsQty = 0;
 int controlStats = 0;
 int finishedOrder = 1;
@@ -90,22 +101,22 @@ void setCursor(int x, int y, enum Direction direction)
     if (direction == UP)
     {
         charThread = '^';
-        printf("\033[36m"); // Cian
+        printf("\033[36m"); 
     }
     else if (direction == DOWN)
     {
         charThread = 'v';
-        printf("\033[35m"); // Magenta
+        printf("\033[35m"); 
     }
     else if (direction == LEFT)
     {
         charThread = '<';
-        printf("\033[34m"); // Azul
+        printf("\033[34m"); 
     }
     else if (direction == RIGHT)
     {
         charThread = '>';
-        printf("\033[33m"); // Amarillo
+        printf("\033[33m"); 
     }
     printf("\033[%d;%dH", y, x);
     fflush(stdout);
@@ -148,7 +159,6 @@ void printLabyrinth()
 {
     system("clear");
     printSeparator();
-    // sleep(2);
 
     // prints each row of the labyrinth
     printf("|");
@@ -194,7 +204,7 @@ bool readLabyrinth(char *fileName)
     // obtains the number of rows and columns
     fscanf(file, "%d %d", &rowsQty, &colsQty);
     fgetc(file);
-    // fgetc(file);
+    fgetc(file);
 
     // reads the file content and stores it in the labyrinth matrix of chars
     int row = 0;
@@ -336,9 +346,6 @@ void printAnStatistic(int id)
             printf("+----+----+-----------+-------+-----------------------+\n");
         }
     }
-    // controlStats= controlStats + 6;
-    // printf("\033[%d;%dH", rowsQty+4, 1);
-    // fflush(stdout);
     pthread_mutex_unlock(&mutex);
 }
 
@@ -456,13 +463,13 @@ void verifyPath(int x, int y, enum Direction direction)
     {
         int newX = x, newY = y;
 
-        // Verificar si la dirección actual es la opuesta de la dirección en la iteración actual
+        // Verifies if the direction is the opposite to the current direction
         if ((direction == UP && (dir == DOWN || dir == UP)) ||
             (direction == DOWN && (dir == DOWN || dir == UP)) ||
             (direction == LEFT && (dir == RIGHT || dir == LEFT)) ||
             (direction == RIGHT && (dir == RIGHT || dir == LEFT)))
         {
-            continue; // Saltar a la siguiente iteración si la dirección es la opuesta
+            continue; // skip the current iteration of the loop if the direction is the opposite
         }
 
         switch (dir)
@@ -481,22 +488,15 @@ void verifyPath(int x, int y, enum Direction direction)
             break;
         }
 
-        // Verificar si la nueva posición está dentro del laberinto y es transitable
+        // Verifies if the new position is inside the labyrinth and is walkable
         if (newX >= 0 && newX < colsQty && newY >= 0 && newY < rowsQty &&
             labyrinth[newY][newX].labyrinth != '*')
         {
 
-            // Verificar si la dirección actual ya ha sido transitada en esta posición
+            // Verifies if the direction has been transited previously
             bool directionTransited = false;
             directionTransited = verifyDirectionTransited(newX, newY, (enum Direction)dir);
-            // for (int i = 0; i < labyrinth[newY][newX].directionsQty; i++) {
-            //     if (labyrinth[newY][newX].direction[i] == (enum Direction)dir) {
-            //         directionTransited = true;
-            //         break;
-            //     }
-            // }
-
-            // Si la dirección no ha sido transitada, crear un nuevo hilo
+            // if the direction has not been transited, creates a new thread
             if (!directionTransited)
             {
                 createThread(newX, newY, (enum Direction)dir, 0);
